@@ -11,6 +11,10 @@ void printMatrix(int m, int n[m], int *rowsPtrArr[m]);
 
 void copyArrayOfLengths(int m, int nCopy[m], int n[m]);
 
+void copyArrayOfPtrs(int m, int *rowsPtrArrCopy[m], int *rowsPtrArr[m]);
+
+void sortMatrixRows(int m, int nCopy[m], int *rowsPtrArrCopy[m]);
+
 void freeMatrix(int m, int n[m], int *rowsPtrArr[m]);
 
 #endif //LAB1_TOOLS_H

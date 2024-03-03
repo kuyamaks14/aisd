@@ -57,6 +57,7 @@ void printMatrix(int m, int n[m], int *rowsPtrArr[m]) {
         for (int j = 0; j < n[i]; j++) {
             printf("%d ", *(*(rowsPtrArr + i) + j));
         }
+
         puts("");
     }
 }
@@ -67,10 +68,40 @@ void copyArrayOfLengths(int m, int nCopy[m], int n[m]) {
     }
 }
 
+void copyArrayOfPtrs(int m, int *rowsPtrArrCopy[m], int *rowsPtrArr[m])  {
+    for (int i = 0; i < m; i++) {
+        *(rowsPtrArrCopy + i) = *(rowsPtrArr + i);
+    }
+}
+
+void sortMatrixRows(int m, int nCopy[m], int *rowsPtrArrCopy[m]) {
+    int j;
+    int currentNum;
+    int *currentPtr;
+    int currentLength;
+
+    for (int i = 1; i < m; i++) {
+        j = i - 1;
+        currentNum = **(rowsPtrArrCopy + i);
+        currentPtr = *(rowsPtrArrCopy + i);
+        currentLength = *(nCopy + i);
+
+        while (j >= 0 && currentNum < **(rowsPtrArrCopy + j)) {
+            *(rowsPtrArrCopy + j + 1) = *(rowsPtrArrCopy + j);
+            *(nCopy + j + 1) = *(nCopy + j);
+            j--;
+        }
+
+        *(rowsPtrArrCopy + j + 1) = currentPtr;
+        *(nCopy + j + 1) = currentLength;
+    }
+}
+
 void freeMatrix(int m, int n[m], int *rowsPtrArr[m]) {
     for (int i = 0; i < m; i++) {
         free(*(rowsPtrArr + i));
     }
+
     free(rowsPtrArr);
 }
 

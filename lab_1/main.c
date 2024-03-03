@@ -9,10 +9,20 @@ int main(void) {
 
     int **rowsPtrArr = fillMatrix(m, n);
 
-    printMatrix(m, n, rowsPtrArr);
 
     int nCopy[m];
-    copyArrayOfLengths(m, nCop, int n[m])
+    copyArrayOfLengths(m, nCopy, n);
+
+    int *rowsPtrArrCopy[m];
+    copyArrayOfPtrs(m, rowsPtrArrCopy, rowsPtrArr);
+
+    sortMatrixRows(m, nCopy, rowsPtrArrCopy);
+
+    puts("---Initial matrix---");
+    printMatrix(m, n, rowsPtrArr);
+
+    puts("\n---Sorted matrix---");
+    printMatrix(m, nCopy, rowsPtrArrCopy);
 
     freeMatrix(m, n, rowsPtrArr);
     return 0;
