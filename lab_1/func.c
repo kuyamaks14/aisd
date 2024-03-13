@@ -2,106 +2,136 @@
 #include <stdlib.h>
 #include "tools.h"
 
-int getAmountOfRows(void) {
-    int amount;
-    printf("%s", "Enter amount of rows: ");
-    scanf("%d", &amount);
-
-    while (amount <= 0) {
-        printf("%s", "Amount of rows must be more than 0! Enter amount of rows: ");
-        scanf("%d", &amount);
+int inputMatrix(Matrix *rm) {
+    getRowsAmount(&rm->lines); // Ввод числа строк матрицы
+    rm->matr = (Line *) calloc(rm->lines, sizeof(Line)); // Выделение памяти под массив строк
+    if (rm->matr == NULL) {
+        return 1;
     }
 
-    return amount;
-}
+    for (int i = 0; i < rm->lines; i++) {
+        getColumnsAmount(&(rm->matr[i].n), i); // Ввод числа колонок i-ой строки матрицы
 
-void getAmountOfColumns(int m, int n[m]) {
-    for (int i = 0; i < m; i++) {
-        int amount;
-        printf("%s%d: ", "Enter amount of columns in a row №", i + 1);
-        scanf("%d", &amount);
-
-        while (amount <= 0) {
-            printf("%s%d: ", "Amount of columns must be more than 0! Enter amount of columns in a row №", i + 1);
-            scanf("%d", &amount);
+        rm->matr[i].a = (int *) calloc(rm->matr[i].n, sizeof(int)); // Выделение памяти под элементы i-ой строки
+        if (rm->matr[i].a == NULL) { // Неудачное выдеделение памяти под i-ую строку матрицы
+            eraseMatrix(rm, i); // Освобождение выделенной к текущему моменту памяти
+            return 1;
         }
 
-        *(n + i) = amount;
+        fillRow(rm->matr + i); // Заполненние элементами i-ой строки матрицы
     }
 
+    puts("The matrix is formed!\n");
+
+    return 0;
+}
+
+void getRowsAmount(int *amount) {
+    const char *msg = "";
+    do {
+        printf("%s\n", msg);
+        printf("%s", "Enter amount of rows: ");
+        scanf("%d", amount);
+        flushBuffer(); // Очистка буфера ввода
+        msg = "You are wrong, repeat please!";
+    } while(*amount < 1);
+}
+
+void getColumnsAmount(int *amount, int num) {
+    const char *msg = "";
+    do {
+        printf("%s\n", msg);
+        printf("%s%d%s", "Enter amount of columns for row №", num + 1, ": ");
+        scanf("%d", amount);
+        flushBuffer(); // Очистка буфера ввода
+        msg = "You are wrong, repeat please!";
+    } while(*amount < 1);
+}
+
+void fillRow(Line *row) {
+    printf("\n%s\n", "Filling the row...");
+    for (int i = 0; i < row->n; i++) {
+        scanf("%d", row->a + i);
+    }
+    flushBuffer(); // Очистка буфера ввода
     puts("");
 }
 
-int **fillMatrix(int m, int n[m]) {
-    puts("Filling the matrix...\n");
+void eraseMatrix(Matrix *rm, int filledRowsNum) {
+    for (int i = 0; i < filledRowsNum; i++) {
+        free(rm->matr[i].a);
+    }
+    free(rm->matr);
+}
 
-    int **rowsPtrArr = (int **) malloc(sizeof(int *) * m);
+void flushBuffer(void) {
+    int c;
+    do {
+        c = getchar();
+    } while(c != '\n' && c != EOF);
+}
 
-    for (int i = 0; i < m; i++) {
-        *(rowsPtrArr + i) = (int *) malloc(sizeof(int) * n[i]);
+void outputMatrix(Matrix *rm, const char *msg) {
+    printf("%s\n", msg);
 
-        printf("%s%d\n", "Filling the row №", i + 1);
-        for (int j = 0; j < n[i]; j++) {
-            printf("%s%d%s%d%s", "Matrix[", i, "][", j, "] = ");
-            scanf("%d", *(rowsPtrArr + i) + j);
+    for (int i = 0; i < rm->lines; i++) {
+        for (int j = 0; j < rm->matr[i].n; j++) {
+            printf("%d ", rm->matr[i].a[j]);
         }
-
         puts("");
     }
-
-    return rowsPtrArr;
+    puts("");
 }
 
-void printMatrix(int m, int n[m], int *rowsPtrArr[m]) {
-    for (int i = 0; i < m; i++) {
-        for (int j = 0; j < n[i]; j++) {
-            printf("%d ", *(*(rowsPtrArr + i) + j));
+int copyMatrix(Matrix *dest, Matrix *src) {
+    dest->lines = src->lines; // Копирование количества строк
+
+    dest->matr = (Line *) calloc(dest->lines, sizeof(Line)); // Выделение памяти под массив строк
+    if (dest->matr == NULL) {
+        return 1;
+    }
+
+    for (int i = 0; i < dest->lines; i++) {
+        dest->matr[i].n = src->matr[i].n; // Копирование количества элементов i-ой строки
+        dest->matr[i].a = (int *) calloc(dest->matr[i].n, sizeof(int)); // Выделение памяти под элементы i-ой строки
+        if (dest->matr[i].a == NULL) { // Неудачное выдеделение памяти под i-ую строку матрицы
+            eraseMatrix(dest, i); // Освобождение выделенной к текущему моменту памяти
+            return 1;
         }
 
-        puts("");
+        for (int j = 0; j < dest->matr[i].n; j++) { // Копирование элементов i-ой строки
+            dest->matr[i].a[j] = src->matr[i].a[j];
+        }
     }
+
+    return 0;
 }
 
-void copyArrayOfLengths(int m, int nCopy[m], int n[m]) {
-    for (int i = 0; i < m; i++) {
-        *(nCopy + i) = *(n + i);
-    }
-}
-
-void copyArrayOfPtrs(int m, int *rowsPtrArrCopy[m], int *rowsPtrArr[m])  {
-    for (int i = 0; i < m; i++) {
-        *(rowsPtrArrCopy + i) = *(rowsPtrArr + i);
-    }
-}
-
-void sortMatrixRows(int m, int nCopy[m], int *rowsPtrArrCopy[m]) {
+void sortMatrix(Matrix *rm) {
     int j;
     int currentNum;
-    int *currentPtr;
-    int currentLength;
+    Line currentPtr;
 
-    for (int i = 1; i < m; i++) {
+    for (int i = 1; i < rm->lines; i++) {
         j = i - 1;
-        currentNum = **(rowsPtrArrCopy + i);
-        currentPtr = *(rowsPtrArrCopy + i);
-        currentLength = *(nCopy + i);
+        currentNum = rm->matr[i].a[0];
+        currentPtr = rm->matr[i];
 
-        while (j >= 0 && currentNum < **(rowsPtrArrCopy + j)) {
-            *(rowsPtrArrCopy + j + 1) = *(rowsPtrArrCopy + j);
-            *(nCopy + j + 1) = *(nCopy + j);
+        while (j >= 0 && currentNum < rm->matr[j].a[0]) {
+            rm->matr[j + 1] = rm->matr[j];
             j--;
         }
 
-        *(rowsPtrArrCopy + j + 1) = currentPtr;
-        *(nCopy + j + 1) = currentLength;
+        rm->matr[j + 1] = currentPtr;
     }
 }
 
-void freeMatrix(int m, int n[m], int *rowsPtrArr[m]) {
-    for (int i = 0; i < m; i++) {
-        free(*(rowsPtrArr + i));
+int processMatrix(Matrix *newRM, Matrix *oldRM) {
+    if (copyMatrix(newRM, oldRM) == 1) { // Ошибка выделения памяти
+        return 1;
     }
 
-    free(rowsPtrArr);
-}
+    sortMatrix(newRM); // Сортировка скопированной матрицы
 
+    return 0;
+}

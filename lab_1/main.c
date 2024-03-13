@@ -2,31 +2,23 @@
 #include "tools.h"
 
 int main(void) {
-//    int m = getAmountOfRows();
-//
-//    int n[m];
-//    getAmountOfColumns(m, n);
-//
-//    int **rowsPtrArr = fillMatrix(m, n);
-//
-//
-//    int nCopy[m];
-//    copyArrayOfLengths(m, nCopy, n);
-//
-//    int *rowsPtrArrCopy[m];
-//    copyArrayOfPtrs(m, rowsPtrArrCopy, rowsPtrArr);
-//
-//    sortMatrixRows(m, nCopy, rowsPtrArrCopy);
-//
-//    puts("---Initial matrix---");
-//    printMatrix(m, n, rowsPtrArr);
-//
-//    puts("\n---Sorted matrix---");
-//    printMatrix(m, nCopy, rowsPtrArrCopy);
-//
-//    freeMatrix(m, n, rowsPtrArr);
-    struct Test t;
-    printf("%d\n", sizeof(t));
+    Matrix originalMatrix = {0, NULL}; // Инициализация исходной матрицы
+    Matrix resultMatrix = {0, NULL}; // Инициализация результирующей матрицы
+
+    if (inputMatrix(&originalMatrix) == 1) { // Ввод созданной матрицы
+        puts("Memory allocation error");
+        return 1;
+    }
+
+    if (processMatrix(&resultMatrix, &originalMatrix) == 1) { // Формирование аналогичной матрицы и ее сортировка
+        puts("Memory allocation error");
+    };
+
+    outputMatrix(&originalMatrix, "Original matrix"); // Вывод исходной матрицы
+    outputMatrix(&resultMatrix, "Result matrix"); // Вывод результирующей матрицы
+
+    eraseMatrix(&originalMatrix, originalMatrix.lines); // Освобождение памяти под исходную матрицу
+    eraseMatrix(&resultMatrix, resultMatrix.lines); // Освобождение памяти под результирующую матрицу
     return 0;
 }
 
