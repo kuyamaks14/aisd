@@ -12,14 +12,17 @@
 int checkEOF(char str[]);
 void preventEndlessLoop(char str[]);
 
-typedef struct Stack
-{
+typedef struct Stack {
     int stack[STACK_SIZE];
     int top;
 } Stack;
-// Stack stack = {.top = 0};
+
+#ifndef LAB_2_H
+Stack stack = {.top = 0};
+#endif
 
 void push(int elem);
 void pop(int *operand);
+void eraseStack();
 
 #endif // LAB_2_FUNC_H
