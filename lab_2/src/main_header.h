@@ -27,6 +27,14 @@ int processPrefixExpression(char str[STRING_SIZE]);
 */
 int processPostfixExpression(char str[STRING_SIZE]);
 
+/*
+    Функция проверки введенной строки на EOF. Если обнаруживает EOF, то возвращает 1, иначе  - 0.
+*/
+int checkEOF(char str[]);
 
+/*
+    Функция, предотвращаюшая бесконечный цикл вывода предыдущей строки при отправке в поток ввода EOF.
+*/
+void preventEndlessLoop(char str[]);
 
 #endif

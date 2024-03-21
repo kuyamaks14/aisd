@@ -9,9 +9,6 @@
 
 #define STACK_SIZE (100)
 
-int checkEOF(char str[]);
-void preventEndlessLoop(char str[]);
-
 typedef struct Stack {
     int stack[STACK_SIZE];
     int top;
@@ -21,8 +18,32 @@ typedef struct Stack {
 Stack stack = {.top = 0};
 #endif
 
-void push(int elem);
-void pop(int *operand);
+/*
+    Функция записи в стек-вектор. Предотвращает переполнение, возвращая 1. В случае успешной записи возвращает 0.
+        Time complexity: O(1)
+        Memory complexity: O(1)
+*/
+int push(int elem);
+
+/*
+    Функция чтения из стека-вектора. Предотвращает чтение из пустого стека, возвращая 1. В случае успешного чтения возвращает 0.
+        Time complexity: O(1)
+        Memory complexity: O(1)
+*/
+int pop(int *operand);
+
+/*
+    Функция возвращает размер стека.
+        Time complexity: O(1)
+        Memory complexity: O(1)
+*/
+int getStackSize();
+
+/*
+    Функция опустошения стека.
+        Time complexity: O(1)
+        Memory complexity: O(1)
+*/
 void eraseStack();
 
 #endif // LAB_2_FUNC_H
