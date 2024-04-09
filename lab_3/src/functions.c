@@ -127,7 +127,7 @@ int dialogAddItem(Table *table) {
     }
 
     add_result = addItem(table, key, info);
-    printf("\nAdd item: %s key = %d, information = %s\n", errmsgs[add_result], key, info);
+    printf("\nAdd item with key = %d and information = %s: %s\n", key, info, errmsgs[add_result]);
     return 1;
 }
 
