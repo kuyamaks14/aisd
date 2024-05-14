@@ -88,6 +88,26 @@ int b_tree_insert(Node **root, int key, char *info);
 int b_tree_print(Node **root);
 
 /*
+*/
+int dilog_b_tree_delete(Node **root);
+
+/*
+*/
+int b_tree_delete(Node **root);
+
+/*
+*/
+Node *b_tree_find_parent(Node **root, int key);
+
+/*
+*/
+int dialog_b_tree_find_successor(Node **root);
+
+/*
+*/
+Node *b_tree_find_successor_key(Node **root, int key, int *successor_key);
+
+/*
     Описание:
         initialize_node - служебная функция, инициализирует поля узла по переданным ключу и информации, указателям на другие узлы присваивается NULL.
  */

@@ -6,7 +6,9 @@ const char *msgs[] = {"0. Quit", "1. Add", "2. Find", "3. Find next min", "4. De
 const int NMsgs = sizeof(msgs) / sizeof(msgs[0]);
 
 // int (*dialog_options[])(Node **root) = {NULL, dialog_add_node, dialog_find_node, dialog_find_next_min_node, dialog_del_node, show_tree_map};
-int (*dialog_options[])(Node **root) = {NULL, dialog_b_tree_insert, dialog_b_tree_search, b_tree_print};
+// int (*dialog_options[])(Node **root) = {NULL, dialog_b_tree_insert, dialog_b_tree_search, b_tree_print};
+int (*dialog_options[])(Node **root) = {NULL, dialog_b_tree_insert, dialog_b_tree_search, b_tree_print, dialog_b_tree_find_successor};
+
 
 // ---------------------------------
 
@@ -253,8 +255,6 @@ int b_tree_insert(Node **root, int key, char *info) {
 // ---------------------------------
 
 int b_tree_print(Node **ptr) {
-    puts("");
-
     if ((*ptr)->leaf == 1) {
         for (int i = (*ptr)->n - 1; i >= 0; i--) {
             printf("Node{key: %d, info: %s, pos: %d}\n", (*ptr)->key[i], (*ptr)->info[i], i);
@@ -267,6 +267,225 @@ int b_tree_print(Node **ptr) {
         b_tree_print(&((*ptr)->next_ptr[0]));
     }
     return 1;  // Ok
+}
+
+// ---------------------------------
+
+// int dilog_b_tree_delete(Node **root) {
+//     int key, get_int_result;
+
+//     puts("Enter key: -->");
+//     if ((get_int_result = get_int(&key)) == 0) {
+//         return 0;  // EOF -> игнорируем весь остальной ввод
+//     }
+
+//     int add_result = del_node(root, key);
+//     printf("\nDelete node with key = %d: %s\n", key, errmsgs[add_result]);
+//     return 1;
+// }
+
+// int b_tree_delete(Node **root, int key) {
+//     b_tree_process_root(root);
+    
+//     Node *ptr = *root;
+//     while (!ptr->leaf) {
+//         int i = 0;  // Key position.
+//         while (i < ptr->n && key > ptr->key[i]) {
+//             i++;
+//         }
+
+//         if (key != ptr->key[i]) {  // situation 1   
+//             Node *target = ptr->next_ptr[i];
+//             if (target->n == T - 1 && (ptr->next_ptr[i + 1]->n >= T || (i > 0 && ptr->next_ptr[i - 1]->n >= T))) {
+//                 if (ptr->next_ptr[i + 1]->n >= T) {  // Right child contains more than T child nodes.
+//                     Node *right = ptr->next_ptr[i + 1];
+
+//                     target->key[T - 1] = ptr->key[i];
+//                     target->info[T - 1] = ptr->info[i];
+
+//                     ptr->key[i] = right->key[0];
+//                     ptr->info[i] = right->info[0];
+
+//                     target->next_ptr[T] = right->next_ptr[0];
+
+//                     for (int j = 0; j < right->n - 1; j++) {
+//                         right->key[j] = right->key[j + 1];
+//                         right->info[j] = right->info[j + 1];
+//                     }
+//                     for (int j = 0; j < right->n; j++) {
+//                         right->next_ptr[j] = right->next_ptr[j + 1];
+//                     }
+
+//                     target->n++;
+//                     right->n--;
+//                 } else {  // Left child contains more than T child nodes.
+//                     Node *left = ptr->next_ptr[i - 1];
+
+//                     for (int j = T - 1; j >= 1; j--) {
+//                         target->key[j] = target->key[j - 1];
+//                         target->info[j] = target->info[j - 1];
+//                     }
+//                     for (int j = T; j >= 1; j--) {
+//                         target->next_ptr[j] = target->next_ptr[j - 1];
+//                     }
+//                     target->key[0] = ptr->key[i - 1];
+//                     target->info[0] = ptr->info[i - 1];
+
+//                     ptr->key[i - 1] = left->key[left->n - 1];
+//                     ptr->info[i - 1] = left->info[left->n - 1];
+
+//                     target->next_ptr[0] = left->next_ptr[left->n];
+
+//                     target->n++;
+//                     left->n--;
+//                 }
+//             } else if (target->n == T - 1 && (ptr->next_ptr[i + 1]->n == T - 1 && (i == 0 || ptr->next_ptr[i - 1]->n == T - 1))) {
+//                 Node *right = ptr->next_ptr[i + 1];
+
+//                 target->key[T - 1] = ptr->key[i];
+//                 target->info[T - 1] = ptr->info[i];
+
+//                 for (int j = 0; j < T - 1; j++) {
+//                     target->key[T + j] = right->key[j];
+//                     target->info[T + j] = right->info[j];
+//                 }
+//                 for (int j = 0; j < T; j++) {
+//                     target->next_ptr[T + j] = right->next_ptr[j];
+//                 }
+
+//                 for (int j = i; j < ptr->n - 1; j++) {
+//                     ptr->key[j] = ptr->key[j + 1];
+//                     ptr->info[j] = ptr->info[j + 1];
+//                 }
+//                 for (int j = i + 1; j < ptr->n; j++) {
+//                     ptr->next_ptr[j] = ptr->next_ptr[j + 1];
+//                 }
+
+//                 ptr->n--;
+//                 target->n += T;
+//                 free(right);
+//             }
+
+//             ptr = target;
+//             continue;
+//         } else {  // situation 2
+            
+//         }
+//     }
+
+//     // ptr - leaf
+// }
+
+// void b_tree_process_root(Node **root) {
+//     Node **x = root;
+//     if ((*x)->n == 1 && (*x)->next_ptr[0]->n == T - 1 && (*x)->next_ptr[1]->n == T - 1) {
+//         Node *left = (*x)->next_ptr[0];
+//         Node *right = (*x)->next_ptr[1];
+
+//         left->key[T - 1] = (*x)->key[0];
+//         left->info[T - 1] = (*x)->info[0];
+//         (*x)->info[0] = NULL;
+//         for (int i = 0; i < T - 1; i++) {
+//             left->key[T + i] = right->key[i];
+//             left->info[T + i] = right->info[i];
+//             right->info[i] = NULL;
+//         }
+//         for (int i = 0; i < T; i++) {
+//             left->next_ptr[T + i] = right->next_ptr[i];
+//             right->next_ptr[i] = NULL;
+//         }
+
+//         *root = left;
+//         free(*x);
+//         free(right);
+//     }
+// }
+
+// ---------------------------------
+
+Node *b_tree_find_parent(Node **root, int key) {
+    // Node *child = b_tree_search(*root, key, NULL);
+    // if (child == NULL) {
+    //     return NULL;  // No such node -> no parent.
+    // }
+
+    Node *parent = NULL;
+    Node *cur = *root;
+    while (1) {
+        int i = 0;
+        while (i < cur->n && key > cur->key[i]) {
+            i++;
+        }
+
+        if (i < cur->n && key == cur->key[i]) {
+            return parent;
+        }
+
+        if (cur->leaf) {
+            return NULL;  // No such node -> no parent.
+        }
+
+        parent = cur;
+        cur = cur->next_ptr[i];
+    }
+}
+
+// ---------------------------------
+
+int dialog_b_tree_find_successor(Node **root) {
+    int key, get_int_result;
+
+    puts("Enter key: -->");
+    if ((get_int_result = get_int(&key)) == 0) {
+        return 0;  // EOF -> игнорируем весь остальной ввод
+    }
+
+    int successor_key;
+    Node *successor = b_tree_find_successor_key(root, key, &successor_key);
+    int result_code = (successor != NULL) ? 0 : 5;
+    printf("\nFind succeccor of node with key = %d: %s\n", key, errmsgs[result_code]);
+    if (successor != NULL) {
+        printf("Successor key = %d\n", successor_key);
+    }
+    return 1;
+}
+
+Node *b_tree_find_successor_key(Node **root, int key, int *successor_key) {
+    int pos;
+    Node *ptr = b_tree_search(*root, key, &pos);
+    if (ptr == NULL) {
+        return NULL;  // No such node -> no successor.
+    }
+
+    Node *successor = NULL;
+    if (!ptr->leaf) {
+        successor = ptr->next_ptr[pos + 1];
+        while (!successor->leaf) {
+            successor = successor->next_ptr[0];
+        }
+        *successor_key = successor->key[0];
+        return successor;
+    } else if (ptr->n > pos + 1) {
+        successor = ptr;
+        *successor_key = successor->key[pos + 1];
+        return successor;
+    } else {
+        Node *parent = b_tree_find_parent(root, key);
+        while (parent != NULL) {
+            int i = 0;
+            while (i < parent->n && key > parent->key[i]) {
+                i++;
+            }
+            if (i == parent->n) {
+                parent = b_tree_find_parent(root, parent->key[0]);
+            } else {
+                successor = parent;
+                *successor_key = successor->key[i];
+                return successor;
+            }
+        }
+        return NULL;
+    }
 }
 
 // ---------------------------------
