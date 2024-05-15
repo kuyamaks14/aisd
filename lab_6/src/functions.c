@@ -357,30 +357,67 @@ int b_tree_delete(Node **root, int key) {
                 }
             } else if (target->n == T - 1 && ((i == ptr->n || ptr->next_ptr[i + 1]->n == T - 1) && (i == 0 || ptr->next_ptr[i - 1]->n == T - 1))) {
                 puts("sit 1b");
-                Node *right = ptr->next_ptr[i + 1];
+                if (i < ptr->n) {
+                    puts("sit 1ba");
+                    Node *right = ptr->next_ptr[i + 1];
 
-                target->key[T - 1] = ptr->key[i];
-                target->info[T - 1] = ptr->info[i];
+                    target->key[T - 1] = ptr->key[i];
+                    target->info[T - 1] = ptr->info[i];
 
-                for (int j = 0; j < T - 1; j++) {
-                    target->key[T + j] = right->key[j];
-                    target->info[T + j] = right->info[j];
-                }
-                for (int j = 0; j < T; j++) {
-                    target->next_ptr[T + j] = right->next_ptr[j];
-                }
+                    for (int j = 0; j < T - 1; j++) {
+                        target->key[T + j] = right->key[j];
+                        target->info[T + j] = right->info[j];
+                    }
+                    for (int j = 0; j < T; j++) {
+                        target->next_ptr[T + j] = right->next_ptr[j];
+                    }
 
-                for (int j = i; j < ptr->n - 1; j++) {
-                    ptr->key[j] = ptr->key[j + 1];
-                    ptr->info[j] = ptr->info[j + 1];
-                }
-                for (int j = i + 1; j < ptr->n; j++) {
-                    ptr->next_ptr[j] = ptr->next_ptr[j + 1];
-                }
+                    for (int j = i; j < ptr->n - 1; j++) {
+                        ptr->key[j] = ptr->key[j + 1];
+                        ptr->info[j] = ptr->info[j + 1];
+                    }
+                    for (int j = i + 1; j < ptr->n; j++) {
+                        ptr->next_ptr[j] = ptr->next_ptr[j + 1];
+                    }
 
-                ptr->n--;
-                target->n += T;
-                free(right);
+                    ptr->n--;
+                    target->n += T;
+                    free(right);
+                } else {
+                    puts("sit 1bb");
+                    Node *left = ptr->next_ptr[i - 1];
+
+                    for (int j = 0; j < T - 1; j++) {
+                        target->key[T + j] = target->key[j];
+                        target->info[T + j] = target->info[j];
+                    }
+                    for (int j = 0; j < T; j++) {
+                        target->next_ptr[T + j] = target->next_ptr[j];
+                    }
+
+                    target->key[T - 1] = ptr->key[i - 1];
+                    target->info[T - 1] = ptr->info[i - 1];
+
+                    for (int j = 0; j < T - 1; j++) {
+                        target->key[j] = left->key[j];
+                        target->info[j] = left->info[j];
+                    }
+                    for (int j = 0; j < T; j++) {
+                        target->next_ptr[j] = left->next_ptr[j];
+                    }
+
+                    for (int j = i - 1; j < ptr->n - 1; j++) {
+                        ptr->key[j] = ptr->key[j + 1];
+                        ptr->info[j] = ptr->info[j + 1];
+                    }
+                    for (int j = i - 1; j < ptr->n; j++) {
+                        ptr->next_ptr[j] = ptr->next_ptr[j + 1];
+                    }
+
+                    ptr->n--;
+                    target->n += T;
+                    free(left);
+                }
             }
 
             ptr = target;
