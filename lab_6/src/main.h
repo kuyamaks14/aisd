@@ -107,6 +107,11 @@ int dialog_b_tree_find_successor(Node **root);
 */
 Node *b_tree_find_successor_key(Node **root, int key, int *successor_key);
 
+int dialog_b_tree_find_predecessor(Node **root);
+/*
+*/
+Node *b_tree_find_predecessor_key(Node **root, int key, int *predecessor_key);
+
 /*
     Описание:
         initialize_node - служебная функция, инициализирует поля узла по переданным ключу и информации, указателям на другие узлы присваивается NULL.
