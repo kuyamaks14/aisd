@@ -13,6 +13,6 @@ int main(void) {
             break;
 
     puts("\nThat's all.");
-    // del_tree_map(&root);
+    b_tree_erase(root);
     return 0;
 }
