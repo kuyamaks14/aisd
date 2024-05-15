@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define T (2)
 
@@ -93,7 +94,11 @@ int dilog_b_tree_delete(Node **root);
 
 /*
 */
-int b_tree_delete(Node **root);
+int b_tree_delete(Node **root, int key);
+
+/*
+*/
+void b_tree_process_root(Node **root);
 
 /*
 */
@@ -105,12 +110,15 @@ int dialog_b_tree_find_successor(Node **root);
 
 /*
 */
-Node *b_tree_find_successor_key(Node **root, int key, int *successor_key);
+Node *b_tree_find_successor_key(Node **root, int key, int *successor_key, char **successor_info);
 
-int dialog_b_tree_find_predecessor(Node **root);
 /*
 */
-Node *b_tree_find_predecessor_key(Node **root, int key, int *predecessor_key);
+Node *b_tree_find_predecessor_key(Node **root, int key, int *predecessor_key, char **predecessor_info);
+
+/*
+*/
+char *copy_information(char *src);
 
 /*
     Описание:
