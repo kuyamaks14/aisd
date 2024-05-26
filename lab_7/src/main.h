@@ -98,6 +98,18 @@ int delete_edge(Graph *graph, int x1, int y1, int x2, int y2);
 
 /*
 */
+int dialog_change_vertex_information(Graph *graph);
+
+/*
+*/
+int change_vertex_information(Graph *graph, int x, int y, int *new_x_ptr, int *new_y_ptr, int *new_type_ptr);
+
+/*
+*/
 int print_graph(Graph *graph);
+
+/*
+*/
+void erase_graph(Graph *graph);
 
 #endif // MAIN_HEADER

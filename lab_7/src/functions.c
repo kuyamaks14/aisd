@@ -8,15 +8,17 @@ const char *errmsgs[] = {"Ok",
                          "These vertices are the same",
                          "These vertices are not neighbors",
                          "These vertices are already linked",
-                         "These vertices are not linked"};
+                         "These vertices are not linked",
+                         "Remove all edges linked with this vertex to change it coordinate",
+                         "This vertex already has this type"};
 
 // const char *msgs[] = {"0. Quit", "1. Add", "2. Find", "3. Find next min", "4. Delete", "5. Show"};
 // const char *msgs[] = {"0. Quit", "1. Add vertex", "2. Add edge", "3. Delete vertex", "4. Delete edge", "5. Change vertex information", "6. Show graph"};
-const char *msgs[] = {"0. Quit", "1. Add vertex", "2. Add edge", "3. Delete vertex", "4. Delete edge", "5. Show graph"};
+const char *msgs[] = {"0. Quit", "1. Add vertex", "2. Add edge", "3. Delete vertex", "4. Delete edge", "5. Change vertex information", "6. Show graph"};
 const int NMsgs = sizeof(msgs) / sizeof(msgs[0]);
 
 // int (*dialog_options[])(Node **root) = {NULL, dialog_b_tree_insert, dialog_b_tree_search, dialog_b_tree_find_successor, dilog_b_tree_delete, b_tree_print};
-int (*dialog_options[])(Graph *graph) = {NULL, dialog_create_vertex, dialog_add_edge, dialog_delete_vertex, dialog_delete_edge, print_graph};
+int (*dialog_options[])(Graph *graph) = {NULL, dialog_create_vertex, dialog_add_edge, dialog_delete_vertex, dialog_delete_edge, dialog_change_vertex_information, print_graph};
 
 // ---------------------------------
 
@@ -362,6 +364,101 @@ int delete_edge(Graph *graph, int x1, int y1, int x2, int y2) {
 
 // ---------------------------------
 
+int dialog_change_vertex_information(Graph *graph) {
+    int x, y, get_int_result;
+
+    puts("Enter X coordinate: -->");
+    if ((get_int_result = get_int(&x, 0)) == 0) {
+        return 0;  // EOF -> игнорируем весь остальной ввод
+    }
+
+    puts("Enter Y coordinate: -->");
+    if ((get_int_result = get_int(&y, 0)) == 0) {
+        return 0;  // EOF -> игнорируем весь остальной ввод
+    }
+
+    puts("\nWhat do you want to change?");
+    const char *err_msg = "";
+    const char *options[] = {"0. X coordinate", "1. Y coordinate", "2. Vertex type"};
+    int options_num = (int)(sizeof(options) / sizeof(options[0]));
+    int chosen_option;
+    do { 
+        puts(err_msg);
+        err_msg = "You are wrong, repeat please!";
+
+        for (int i = 0; i < options_num; i++) {
+            puts(options[i]);
+        }
+        puts("Make your choice: --> ");
+
+        if (get_int(&chosen_option, 0) == 0) {
+            return 0;  // EOF -> quit from program
+        }
+    } while (chosen_option < 0 || chosen_option >= options_num);
+        
+    if (chosen_option == 0) {
+        int new_x;
+        puts("Enter new X coordinate: -->");
+        if ((get_int_result = get_int(&new_x, 0)) == 0) {
+            return 0;  // EOF -> игнорируем весь остальной ввод
+        }
+        int change_vertex_information_result = change_vertex_information(graph, x, y, &new_x, NULL, NULL);
+        printf("\nResult of changing X coordinate to %d: %s\n", new_x, errmsgs[change_vertex_information_result]);
+    } else if (chosen_option == 1) {
+        int new_y;
+        puts("Enter new Y coordinate: -->");
+        if ((get_int_result = get_int(&new_y, 0)) == 0) {
+            return 0;  // EOF -> игнорируем весь остальной ввод
+        }
+        int change_vertex_information_result = change_vertex_information(graph, x, y, NULL, &new_y, NULL);
+        printf("\nResult of changing Y coordinate to %d: %s\n", new_y, errmsgs[change_vertex_information_result]);
+    } else {
+        int new_type;
+        puts("Enter new vertex type (0 - default, 1 - entrance, 2 - exit): -->");
+        if ((get_int_result = get_int(&new_type, 1)) == 0) {
+            return 0;  // EOF -> игнорируем весь остальной ввод
+        }
+        int change_vertex_information_result = change_vertex_information(graph, x, y, NULL, NULL, &new_type);
+        printf("\nResult of changing vertex type to %s: %s\n", vertex_types[new_type], errmsgs[change_vertex_information_result]);
+    }
+
+    return 1;
+}
+
+int change_vertex_information(Graph *graph, int x, int y, int *new_x_ptr, int *new_y_ptr, int *new_type_ptr) {
+    int vertex_idx = search_vertex(graph, x, y);
+    if (vertex_idx == -1) {
+        return 2;  // Graph doesn't have such vertex(vertices)
+    }
+
+    if (new_x_ptr != NULL || new_y_ptr != NULL) {
+        if (graph->adj_list[vertex_idx]->next != NULL) {
+            return 7;  // Remove all edges linked with this vertex to change it coordinate
+        }
+
+        if (new_x_ptr != NULL) {
+            if (search_vertex(graph, *new_x_ptr, *(graph->adj_list[vertex_idx]->y)) != -1) {
+                return 1;  // Such vertex already exists
+            }
+            *(graph->adj_list[vertex_idx]->x) = *new_x_ptr;
+        } else {
+            if (search_vertex(graph, *(graph->adj_list[vertex_idx]->x), *new_y_ptr) != -1) {
+                return 1;  // Such vertex already exists
+            }
+            *(graph->adj_list[vertex_idx]->y) = *new_y_ptr;
+        }
+    } else {
+        if (*(graph->adj_list[vertex_idx]->type) == *new_type_ptr) {
+            return 8;  // This vertex already has this type
+        }
+        *(graph->adj_list[vertex_idx]->type) = *new_type_ptr;
+    }
+
+    return 0;  // Ok
+}
+
+// ---------------------------------
+
 int print_graph(Graph *graph) {
     puts("");
 
@@ -386,6 +483,45 @@ int print_graph(Graph *graph) {
         puts("");
     }
     return 1;
+}
+
+// ---------------------------------
+
+void erase_graph(Graph *graph) {
+    Vertex *cur_vertex_ptr = NULL;
+    Vertex *vertex_to_del_ptr = NULL;
+
+    for (int i = 0; i < graph->num_vertices; i++) {
+        cur_vertex_ptr = graph->adj_list[i];
+        while (cur_vertex_ptr->next != NULL) {
+            vertex_to_del_ptr = cur_vertex_ptr->next;
+            cur_vertex_ptr->next = vertex_to_del_ptr->next;
+
+            vertex_to_del_ptr->id = NULL;
+            vertex_to_del_ptr->x = NULL;
+            vertex_to_del_ptr->y = NULL;
+            vertex_to_del_ptr->type = NULL;
+            vertex_to_del_ptr->next = NULL;
+
+            free(vertex_to_del_ptr);
+        }
+
+        free(cur_vertex_ptr->id);
+        free(cur_vertex_ptr->x);
+        free(cur_vertex_ptr->y);
+        free(cur_vertex_ptr->type);
+        
+        cur_vertex_ptr->id = NULL;
+        cur_vertex_ptr->x = NULL;
+        cur_vertex_ptr->y = NULL;
+        cur_vertex_ptr->type = NULL;
+
+        free(cur_vertex_ptr);
+    }
+
+    free(graph->adj_list);
+    graph->adj_list = NULL;
+    graph->num_vertices = 0;
 }
 
 // ---------------------------------

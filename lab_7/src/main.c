@@ -13,6 +13,6 @@ int main(void) {
             break;
 
     puts("\nThat's all.");
-    // b_tree_erase(root);
+    erase_graph(graph);
     return 0;
 }
