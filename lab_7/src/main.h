@@ -8,10 +8,10 @@
 #include <limits.h>
 
 typedef struct Vertex {
-    int id;
-    int x;
-    int y;
-    int type;
+    int *id;
+    int *x;
+    int *y;
+    int *type;
     struct Vertex *next;
 } Vertex;
 
@@ -84,6 +84,17 @@ int dialog_delete_vertex(Graph *graph);
 */
 int delete_vertex(Graph *graph, int x, int y);
 
+/*
+*/
+int dialog_delete_edge(Graph *graph);
+
+/*
+*/
+void update_adj_list_to_delete_edge(Graph *graph, int first_vertex_idx, int second_vertex_idx);
+
+/*
+*/
+int delete_edge(Graph *graph, int x1, int y1, int x2, int y2);
 
 /*
 */
