@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <string.h>
 #include <limits.h>
 
 typedef struct Vertex {
@@ -103,6 +102,26 @@ int dialog_change_vertex_information(Graph *graph);
 /*
 */
 int change_vertex_information(Graph *graph, int x, int y, int *new_x_ptr, int *new_y_ptr, int *new_type_ptr);
+
+/*
+*/
+int dialog_check_achievability_exits(Graph *graph);
+
+/*
+*/
+int DFS(Graph *graph, int entrance_idx);
+
+/*
+*/
+int DFS_visit(Graph *graph, int vertex_idx, int pred_idx_arr[], int color_arr[], int discovery_time_arr[], int finish_time_arr[], int *time_ptr);
+
+/*
+*/
+void DFS_print_path(Graph *graph, int vertex_idx, int pred_idx_arr[], int flag_first_call);
+
+/*
+*/
+int check_achievability_exits(Graph *graph, int x, int y);
 
 /*
 */

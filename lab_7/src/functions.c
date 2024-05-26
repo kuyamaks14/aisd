@@ -1,7 +1,7 @@
 #include "main.h"
 
 const char *vertex_types[3] = {"default", "entrance", "exit"};
-// const char *errmsgs[] = {"Ok", "Key duplicate", "No node with such a key", "Empty B-tree", "No successor or such node in B-tree"};
+
 const char *errmsgs[] = {"Ok",
                          "Such vertex already exists",
                          "Graph doesn't have such vertex(vertices)",
@@ -10,15 +10,29 @@ const char *errmsgs[] = {"Ok",
                          "These vertices are already linked",
                          "These vertices are not linked",
                          "Remove all edges linked with this vertex to change it coordinate",
-                         "This vertex already has this type"};
+                         "This vertex already has this type",
+                         "This vertex is not entrance",
+                         "No path from this entrance to any kind of exit"};
 
-// const char *msgs[] = {"0. Quit", "1. Add", "2. Find", "3. Find next min", "4. Delete", "5. Show"};
-// const char *msgs[] = {"0. Quit", "1. Add vertex", "2. Add edge", "3. Delete vertex", "4. Delete edge", "5. Change vertex information", "6. Show graph"};
-const char *msgs[] = {"0. Quit", "1. Add vertex", "2. Add edge", "3. Delete vertex", "4. Delete edge", "5. Change vertex information", "6. Show graph"};
+const char *msgs[] = {"0. Quit",
+                      "1. Add vertex",
+                      "2. Add edge",
+                      "3. Delete vertex",
+                      "4. Delete edge",
+                      "5. Change vertex information",
+                      "6. Check achievability from specified entrance to at least one exit",
+                      "7. Show graph"};
+
 const int NMsgs = sizeof(msgs) / sizeof(msgs[0]);
 
-// int (*dialog_options[])(Node **root) = {NULL, dialog_b_tree_insert, dialog_b_tree_search, dialog_b_tree_find_successor, dilog_b_tree_delete, b_tree_print};
-int (*dialog_options[])(Graph *graph) = {NULL, dialog_create_vertex, dialog_add_edge, dialog_delete_vertex, dialog_delete_edge, dialog_change_vertex_information, print_graph};
+int (*dialog_options[])(Graph *graph) = {NULL,
+                                         dialog_create_vertex,
+                                         dialog_add_edge,
+                                         dialog_delete_vertex,
+                                         dialog_delete_edge,
+                                         dialog_change_vertex_information,
+                                         dialog_check_achievability_exits,
+                                         print_graph};
 
 // ---------------------------------
 
@@ -455,6 +469,113 @@ int change_vertex_information(Graph *graph, int x, int y, int *new_x_ptr, int *n
     }
 
     return 0;  // Ok
+}
+
+// ---------------------------------
+
+int dialog_check_achievability_exits(Graph *graph) {
+    int x, y, get_int_result;
+
+    puts("Enter X coordinate of an entrance: -->");
+    if ((get_int_result = get_int(&x, 0)) == 0) {
+        return 0;  // EOF -> игнорируем весь остальной ввод
+    }
+
+    puts("Enter Y coordinate of an entrance: -->");
+    if ((get_int_result = get_int(&y, 0)) == 0) {
+        return 0;  // EOF -> игнорируем весь остальной ввод
+    }
+
+    int check_achievability_exits_result = check_achievability_exits(graph, x, y);
+    printf("\nResult of finding path from this entrance to any kind of exit: %s\n", errmsgs[check_achievability_exits_result]);
+    return 1;
+}
+
+int check_achievability_exits(Graph *graph, int x, int y) {
+    int entrance_idx = search_vertex(graph, x, y);
+    if (entrance_idx == -1) {
+        return 2;  // Graph doesn't have such vertex(vertices)
+    }
+
+    if (*(graph->adj_list[entrance_idx]->type) != 1) {
+        return 9;  // This vertex is not an entrance;
+    }
+
+    int DFS_result = DFS(graph, entrance_idx);
+    return DFS_result;
+}
+
+int DFS(Graph *graph, int entrance_idx) {
+    int pred_idx_arr[graph->num_vertices];
+    int color_arr[graph->num_vertices];  // 0 - white, 1 - gray, 2 - black
+    int discovery_time_arr[graph->num_vertices];
+    int finish_time_arr[graph->num_vertices];
+
+    // DFS Initialization
+    for (int i = 0; i < graph->num_vertices; i++) {
+        pred_idx_arr[i] = -1;
+        color_arr[i] = 0;
+    }
+    int time = 0;
+
+    // DFS Processing for the specified entrance
+    int found_exit_idx = DFS_visit(graph, entrance_idx, pred_idx_arr, color_arr, discovery_time_arr, finish_time_arr, &time);
+    if (found_exit_idx == -1) {
+        return 10;  // No path from this entrance to any kind of exit
+    }
+
+    puts("\nOne of the possible paths:");
+    DFS_print_path(graph, found_exit_idx, pred_idx_arr, 1);
+    return 0;  // Ok
+}
+
+int DFS_visit(Graph *graph, int vertex_idx, int pred_idx_arr[], int color_ptr[], int discovery_time_arr[], int finish_time_arr[], int *time_ptr) {
+    // DFS modification to find at least one exit from the specifiend entrance
+    if (*(graph->adj_list[vertex_idx]->type) == 2) {
+        return vertex_idx;  // This vertex is an exit
+    }
+
+    color_ptr[vertex_idx] = 1;
+    *time_ptr += 1;
+    discovery_time_arr[vertex_idx] = *time_ptr;
+
+    Vertex *adj_vertex_ptr = graph->adj_list[vertex_idx]->next;
+    while (adj_vertex_ptr != NULL) {
+        if (color_ptr[*(adj_vertex_ptr->id)] == 0) {
+            pred_idx_arr[*(adj_vertex_ptr->id)] = vertex_idx;
+
+            int found_exit_idx = DFS_visit(graph, *(adj_vertex_ptr->id), pred_idx_arr, color_ptr, discovery_time_arr, finish_time_arr, time_ptr);
+            if (found_exit_idx != -1) {
+                return found_exit_idx;  // An exit is found
+            }
+        }
+
+        adj_vertex_ptr = adj_vertex_ptr->next;
+    }
+
+    color_ptr[vertex_idx] = 2;
+    *time_ptr += 1;
+    finish_time_arr[vertex_idx] = *time_ptr;
+
+    return -1;  // It means this vertex is not an exit
+}
+
+void DFS_print_path(Graph *graph, int vertex_idx, int pred_idx_arr[], int flag_first_call) {
+    int id = *(graph->adj_list[vertex_idx]->id);
+    int x = *(graph->adj_list[vertex_idx]->x);
+    int y = *(graph->adj_list[vertex_idx]->y);
+    int type = *(graph->adj_list[vertex_idx]->type);
+
+    if (pred_idx_arr[vertex_idx] == -1) {
+        printf("{№%d, (%d, %d), %s} -> ", id, x, y, vertex_types[type]);
+    } else {
+        DFS_print_path(graph, pred_idx_arr[vertex_idx], pred_idx_arr, 0);
+        if (flag_first_call) {
+            printf("{№%d, (%d, %d), %s}\n", id, x, y, vertex_types[type]);
+        } else {
+            printf("{№%d, (%d, %d), %s} -> ", id, x, y, vertex_types[type]);
+        }
+    }
 }
 
 // ---------------------------------
