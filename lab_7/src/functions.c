@@ -774,46 +774,23 @@ int dijkstra(Graph *graph, int origin_vertex_idx, int exit_vertex_idx) {
     PriorityQueue *queue_ptr = build_min_heap(graph, &default_priority);
     
     decrease_priority(queue_ptr, get_elem_idx_by_vertex_idx(queue_ptr, graph->num_vertices, origin_vertex_idx), 0);
-
-    for (int i = 0; i < queue_ptr->size; i++)
-    {
-        printf("(%d, %d)", *(queue_ptr->elem_ptr_arr[i]->vertex_ptr->id), queue_ptr->elem_ptr_arr[i]->priority);
-    }
-
-    puts("перед обработкой");
     
     // Processing
     int adj_elem_idx;
-    while (queue_ptr->size)
-    {
+    while (queue_ptr->size) {
         PriorityQueueElem *queue_elem_ptr = extract_min(queue_ptr);
-        for (int i = 0; i < queue_ptr->size; i++)
-        {
-            printf("(%d, %d)", *(queue_ptr->elem_ptr_arr[i]->vertex_ptr->id), queue_ptr->elem_ptr_arr[i]->priority);
-        }
-        puts("1");
         Vertex *adj_vertex_ptr = graph->adj_list[*(queue_elem_ptr->vertex_ptr->id)]->next;
-        puts("2");
-        
         while (adj_vertex_ptr != NULL) {
             adj_elem_idx = get_elem_idx_by_vertex_idx(queue_ptr, graph->num_vertices, *(adj_vertex_ptr->id));
-            printf("adj v idx = %d, adj elem idx = %d\n", *(adj_vertex_ptr->id),adj_elem_idx);
-            puts("3");
             if (queue_ptr->elem_ptr_arr[adj_elem_idx]->priority > queue_elem_ptr->priority + WEIGHT) {
-                puts("4");
                 decrease_priority(queue_ptr, adj_elem_idx, queue_elem_ptr->priority + WEIGHT);
                 adj_elem_idx = get_elem_idx_by_vertex_idx(queue_ptr, graph->num_vertices, *(adj_vertex_ptr->id));
-                puts("5");
                 queue_ptr->elem_ptr_arr[adj_elem_idx]->pred_vertex_ptr = queue_elem_ptr->vertex_ptr;
-                printf("%d - предок для %d\n", *(queue_elem_ptr->vertex_ptr->id), *(queue_ptr->elem_ptr_arr[adj_elem_idx]->vertex_ptr->id));
-                puts("6");
             }
             adj_vertex_ptr = adj_vertex_ptr->next;
-            puts("7");
         }
-        puts("8");
     }
-    puts("9");
+    
     // Printing the shortest path
     int exit_queue_elem_idx = get_elem_idx_by_vertex_idx(queue_ptr, graph->num_vertices, *(graph->adj_list[exit_vertex_idx]->id));
     if (queue_ptr->elem_ptr_arr[exit_queue_elem_idx]->pred_vertex_ptr == NULL) {
