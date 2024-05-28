@@ -128,11 +128,11 @@ int dialog_check_achievability_exits(Graph *graph);
 
 /*
 */
-int DFS(Graph *graph, int entrance_idx);
+int DFS(Graph *graph, int entrance_idx, int flag_check_connectivity);
 
 /*
 */
-int DFS_visit(Graph *graph, int vertex_idx, int pred_idx_arr[], int color_arr[], int discovery_time_arr[], int finish_time_arr[], int *time_ptr);
+int DFS_visit(Graph *graph, int vertex_idx, int pred_idx_arr[], int color_arr[], int discovery_time_arr[], int finish_time_arr[], int *time_ptr, int flag_check_connectivity);
 
 /*
 */
@@ -141,6 +141,10 @@ void DFS_print_path(Graph *graph, int vertex_idx, int pred_idx_arr[], int flag_f
 /*
 */
 int check_achievability_exits(Graph *graph, int x, int y);
+
+/*
+*/
+int check_graph_connectivity(Graph *graph);
 
 /*
 */

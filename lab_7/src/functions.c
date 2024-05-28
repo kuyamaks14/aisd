@@ -16,7 +16,8 @@ const char *errmsgs[] = {"Ok",
                          "This vertex is not exit",
                          "No path between the specified entrance and exit",
                          "File is not found",
-                         "The graph is empty"};
+                         "The graph is empty",
+                         "The graph is not connected"};
 
 const char *msgs[] = {"0. Quit",
                       "1. Add vertex",
@@ -549,11 +550,16 @@ int check_achievability_exits(Graph *graph, int x, int y) {
         return 9;  // This vertex is not an entrance;
     }
 
-    int DFS_result = DFS(graph, entrance_idx);
+    int DFS_result = DFS(graph, entrance_idx, 0);
     return DFS_result;
 }
 
-int DFS(Graph *graph, int entrance_idx) {
+int check_graph_connectivity(Graph *graph) {
+    int DFS_for_checking_connectivity_result = DFS(graph, 0, 1);
+    return DFS_for_checking_connectivity_result;
+}
+
+int DFS(Graph *graph, int entrance_idx, int flag_check_connectivity) {
     int pred_idx_arr[graph->num_vertices];
     int color_arr[graph->num_vertices];  // 0 - white, 1 - gray, 2 - black
     int discovery_time_arr[graph->num_vertices];
@@ -567,20 +573,37 @@ int DFS(Graph *graph, int entrance_idx) {
     int time = 0;
 
     // DFS Processing for the specified entrance
-    int found_exit_idx = DFS_visit(graph, entrance_idx, pred_idx_arr, color_arr, discovery_time_arr, finish_time_arr, &time);
-    if (found_exit_idx == -1) {
-        return 10;  // No path from this entrance to any kind of exit
+    if (flag_check_connectivity == 0) {
+        int found_exit_idx = DFS_visit(graph, entrance_idx, pred_idx_arr, color_arr, discovery_time_arr, finish_time_arr, &time, 0);
+        if (found_exit_idx == -1) {
+            return 10;  // No path from this entrance to any kind of exit
+        }
+
+        puts("\nOne of the possible paths:");
+        DFS_print_path(graph, found_exit_idx, pred_idx_arr, 1);
+    } else {
+        int connected_components_count = 0;
+        for (int i = 0; i < graph->num_vertices; i++) {
+            if (color_arr[i] == 0) {
+                if (connected_components_count == 1) {
+                    return 15;  // The graph is not connected
+                }
+
+                connected_components_count++;
+                DFS_visit(graph, entrance_idx, pred_idx_arr, color_arr, discovery_time_arr, finish_time_arr, &time, 1);
+            }
+        }
     }
 
-    puts("\nOne of the possible paths:");
-    DFS_print_path(graph, found_exit_idx, pred_idx_arr, 1);
     return 0;  // Ok
 }
 
-int DFS_visit(Graph *graph, int vertex_idx, int pred_idx_arr[], int color_ptr[], int discovery_time_arr[], int finish_time_arr[], int *time_ptr) {
+int DFS_visit(Graph *graph, int vertex_idx, int pred_idx_arr[], int color_ptr[], int discovery_time_arr[], int finish_time_arr[], int *time_ptr, int flag_check_connectivity) {
     // DFS modification to find at least one exit from the specifiend entrance
-    if (*(graph->adj_list[vertex_idx]->type) == 2) {
-        return vertex_idx;  // This vertex is an exit
+    if (flag_check_connectivity == 0) {
+        if (*(graph->adj_list[vertex_idx]->type) == 2) {
+            return vertex_idx;  // This vertex is an exit
+        }
     }
 
     color_ptr[vertex_idx] = 1;
@@ -592,9 +615,13 @@ int DFS_visit(Graph *graph, int vertex_idx, int pred_idx_arr[], int color_ptr[],
         if (color_ptr[*(adj_vertex_ptr->id)] == 0) {
             pred_idx_arr[*(adj_vertex_ptr->id)] = vertex_idx;
 
-            int found_exit_idx = DFS_visit(graph, *(adj_vertex_ptr->id), pred_idx_arr, color_ptr, discovery_time_arr, finish_time_arr, time_ptr);
-            if (found_exit_idx != -1) {
-                return found_exit_idx;  // An exit is found
+            if (flag_check_connectivity == 0) {
+                int found_exit_idx = DFS_visit(graph, *(adj_vertex_ptr->id), pred_idx_arr, color_ptr, discovery_time_arr, finish_time_arr, time_ptr, 0);
+                if (found_exit_idx != -1) {
+                    return found_exit_idx;  // An exit is found
+                }
+            } else {
+                DFS_visit(graph, *(adj_vertex_ptr->id), pred_idx_arr, color_ptr, discovery_time_arr, finish_time_arr, time_ptr, 1);
             }
         }
 
@@ -895,6 +922,11 @@ int build_MST(Graph *graph, int x, int y) {
     int root_idx = search_vertex(graph, x, y);
     if (root_idx == -1) {
         return 2;  // Graph doesn't have such vertex(vertices)
+    }
+
+    int check_graph_connectivity_result = check_graph_connectivity(graph);
+    if (check_graph_connectivity_result != 0) {
+        return check_graph_connectivity_result;  // The graph is not connected
     }
 
     int entrance_count = 0;
