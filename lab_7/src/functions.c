@@ -14,7 +14,8 @@ const char *errmsgs[] = {"Ok",
                          "This vertex is not entrance",
                          "No path from this entrance to any kind of exit",
                          "This vertex is not exit",
-                         "No path between the specified entrance and exit"};
+                         "No path between the specified entrance and exit",
+                         "File is not found"};
 
 const char *msgs[] = {"0. Quit",
                       "1. Add vertex",
@@ -24,7 +25,8 @@ const char *msgs[] = {"0. Quit",
                       "5. Change vertex information",
                       "6. Check achievability from a specified entrance to at least one exit",
                       "7. Find the shortest path between an entrance and an exit specified",
-                      "8. Show graph"};
+                      "8. Show graph",
+                      "9. Read a graph from the file"};
 
 const int NMsgs = sizeof(msgs) / sizeof(msgs[0]);
 
@@ -36,7 +38,8 @@ int (*dialog_options[])(Graph *graph) = {NULL,
                                          dialog_change_vertex_information,
                                          dialog_check_achievability_exits,
                                          dialog_dijkstra,
-                                         print_graph};
+                                         print_graph,
+                                         dialog_enter_graph_from_file};
 
 // ---------------------------------
 
@@ -58,6 +61,44 @@ int get_int(int *num, int is_vertex_type) {
     
     scanf("%*[^\n]");
     return 1;
+}
+
+// ---------------------------------
+
+char *get_str() {
+    char *str = (char *) malloc(sizeof(char));
+    *str = '\0';
+    int str_size = sizeof(char);
+
+    char character;
+    for (int i = 0; ; i++) {
+        character = getchar();
+
+        if (character == EOF) {
+            free(str);
+            return NULL;
+        } else if (character == '\n') {
+            if (i > 0) {
+                break;
+            } else {
+                i--;
+            }
+        } else {
+            char *str2 = (char *) realloc(str, str_size + sizeof(char));
+            str_size += sizeof(char);
+
+            if (str == NULL) {
+                free(str);
+                return NULL;
+            }
+            str = str2;
+
+            str[i] = character;
+            str[i + 1] = '\0';
+        }
+    }
+
+    return str;
 }
 
 // ---------------------------------
@@ -790,7 +831,7 @@ int dijkstra(Graph *graph, int origin_vertex_idx, int exit_vertex_idx) {
             adj_vertex_ptr = adj_vertex_ptr->next;
         }
     }
-    
+
     // Printing the shortest path
     int exit_queue_elem_idx = get_elem_idx_by_vertex_idx(queue_ptr, graph->num_vertices, *(graph->adj_list[exit_vertex_idx]->id));
     if (queue_ptr->elem_ptr_arr[exit_queue_elem_idx]->pred_vertex_ptr == NULL) {
@@ -872,3 +913,70 @@ void erase_graph(Graph *graph) {
 }
 
 // ---------------------------------
+
+int dialog_enter_graph_from_file(Graph *graph) {
+    char *fname;
+
+    puts("Enter file name (e.g.: some_file.txt):");
+    fname = get_str();
+    if (fname == NULL) {
+        return 0; // EOF или ошибка при чтении
+    }
+
+    int enter_graph_from_file_result = enter_graph_from_file(graph, fname);
+    printf("\nResult of reading a graph from the file %s: %s\n", fname,errmsgs[enter_graph_from_file_result]);
+    return 1;  // Ok
+}
+
+int enter_graph_from_file(Graph *graph, char *fname) {
+    char *adjusted_fname = (char *) malloc(sizeof(char) * (strlen(fname) + strlen(SRC_FOLDER_NAME) + 1));
+
+    for (int i = 0; i < strlen(SRC_FOLDER_NAME); i++) {
+        adjusted_fname[i] = SRC_FOLDER_NAME[i];
+    }
+
+    strcpy(adjusted_fname + strlen(SRC_FOLDER_NAME), fname);
+
+    FILE *fp = fopen(adjusted_fname, "r");
+    if (fp == NULL) {
+        free(fname);
+        free(adjusted_fname);
+        return 13;  // File is not found
+    }
+
+    int x, y, type;
+    int fscanf_res;
+    while (1) {
+        fscanf_res = fscanf(fp, "%d %d %d", &x, &y, &type);
+        if (fscanf_res == 0) {
+            fscanf(fp, "%*[^\n]");
+            continue;
+        }
+
+        if (x == -1) {
+            break;
+        }
+
+        create_vertex(graph, x, y, type);
+    }
+
+    int x1, y1, x2, y2;
+    while (1) {
+        fscanf_res = fscanf(fp, "%d %d %d %d", &x1, &y1, &x2, &y2);
+        if (fscanf_res == 0) {
+            fscanf(fp, "%*[^\n]");
+            continue;
+        }
+
+        if (fscanf_res == -1) {
+            break;
+        }
+
+        add_edge(graph, x1, y1, x2, y2);
+    }
+
+    free(fname);
+    free(adjusted_fname);
+    fclose(fp);
+    return 0;  // Ok
+}

@@ -5,8 +5,10 @@
 #include <stdlib.h>
 #include <math.h>
 #include <limits.h>
+#include <string.h>
 
 #define WEIGHT (1)
+#define SRC_FOLDER_NAME ("src/")
 
 typedef struct Vertex {
     int *id;
@@ -41,6 +43,10 @@ typedef struct PriorityQueue {
         1 - в остальных случаях.
 */
 int get_int(int *num, int is_vertex_type);
+
+/*
+*/
+char *get_str();
 
 /*
     Описание:
@@ -183,5 +189,13 @@ int print_graph(Graph *graph);
 /*
 */
 void erase_graph(Graph *graph);
+
+/*
+*/
+int dialog_enter_graph_from_file(Graph *graph);
+
+/*
+*/
+int enter_graph_from_file(Graph *graph, char *fname);
 
 #endif // MAIN_HEADER
