@@ -168,6 +168,10 @@ int get_elem_idx_by_vertex_idx(PriorityQueue *queue_ptr, int queue_length, int v
 
 /*
 */
+// void heap_sort(PriorityQueue *queue_ptr, int queue_length);
+
+/*
+*/
 int dialog_dijkstra(Graph *graph);
 
 /*
@@ -181,6 +185,18 @@ void print_path_dijkstra(Graph *graph, PriorityQueue *queue_ptr, int vertex_idx,
 /*
 */
 int dijkstra(Graph *graph, int origin_vertex_idx, int exit_vertex_idx);
+
+/*
+*/
+int dialog_MST(Graph *graph);
+
+/*
+*/
+int build_MST(Graph *graph, int x, int y);
+
+/*
+*/
+void MST_prim(Graph *graph, int root_idx);
 
 /*
 */

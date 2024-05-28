@@ -15,7 +15,8 @@ const char *errmsgs[] = {"Ok",
                          "No path from this entrance to any kind of exit",
                          "This vertex is not exit",
                          "No path between the specified entrance and exit",
-                         "File is not found"};
+                         "File is not found",
+                         "The graph is empty"};
 
 const char *msgs[] = {"0. Quit",
                       "1. Add vertex",
@@ -25,8 +26,9 @@ const char *msgs[] = {"0. Quit",
                       "5. Change vertex information",
                       "6. Check achievability from a specified entrance to at least one exit",
                       "7. Find the shortest path between an entrance and an exit specified",
-                      "8. Show graph",
-                      "9. Read a graph from the file"};
+                      "8. Modify the graph to MST",
+                      "9. Show graph",
+                      "10. Read a graph from the file"};
 
 const int NMsgs = sizeof(msgs) / sizeof(msgs[0]);
 
@@ -38,6 +40,7 @@ int (*dialog_options[])(Graph *graph) = {NULL,
                                          dialog_change_vertex_information,
                                          dialog_check_achievability_exits,
                                          dialog_dijkstra,
+                                         dialog_MST,
                                          print_graph,
                                          dialog_enter_graph_from_file};
 
@@ -744,7 +747,24 @@ int get_elem_idx_by_vertex_idx(PriorityQueue *queue_ptr, int queue_length, int v
     return -1;
 }
 
+// ---------------------------------
 
+// void heap_sort(PriorityQueue *queue_ptr, int queue_length) {
+//     queue_ptr->size = queue_length;
+//     int i = queue_length - 1;
+
+//     while (i > 0) {
+//         PriorityQueueElem *first_elem_ptr = queue_ptr->elem_ptr_arr[0];
+//         queue_ptr->elem_ptr_arr[0] = queue_ptr->elem_ptr_arr[i];
+//         queue_ptr->elem_ptr_arr[i] = first_elem_ptr;
+
+//         queue_ptr->size -= 1;
+
+//         min_heapify(queue_ptr, 0);
+
+//         i--;
+//     }
+// }
 
 // ---------------------------------
 
@@ -847,6 +867,111 @@ int dijkstra(Graph *graph, int origin_vertex_idx, int exit_vertex_idx) {
 
 // ---------------------------------
 
+int dialog_MST(Graph *graph) {
+    int x, y, get_int_result;
+
+    puts("Enter X coordinate of a root vertex to build MST: -->");
+    if ((get_int_result = get_int(&x, 0)) == 0) {
+        return 0;  // EOF -> игнорируем весь остальной ввод
+    }
+
+    puts("Enter Y coordinate of a root vertex to build MST: -->");
+    if ((get_int_result = get_int(&y, 0)) == 0) {
+        return 0;  // EOF -> игнорируем весь остальной ввод
+    }
+
+    int build_MST_result = build_MST(graph, x, y);
+    printf("\nResult of modifying the graph to MST: %s\n", errmsgs[build_MST_result]);
+    return 1;
+}
+
+// ---------------------------------
+
+int build_MST(Graph *graph, int x, int y) {
+    if (!graph->num_vertices) {
+        return 14;  // The graph is empty
+    }
+
+    int root_idx = search_vertex(graph, x, y);
+    if (root_idx == -1) {
+        return 2;  // Graph doesn't have such vertex(vertices)
+    }
+
+    int entrance_count = 0;
+    int exit_count = 0;
+    int vertex_type = -1;
+    for (int i = 0; i < graph->num_vertices; i++) {
+        vertex_type = *(graph->adj_list[i]->type);
+        switch (vertex_type) {
+            case 1:
+                entrance_count++;
+                break;
+            case 2:
+                exit_count++;
+                break;
+        }
+    }
+
+    if (entrance_count == 0) {
+        puts("\nWarning: the graph does not have an entrance.");
+    }
+
+    if (exit_count == 0) {
+        puts("Warning: the graph does not have an exit.");
+    }
+
+    MST_prim(graph, root_idx);
+    return 0;  // Ok
+}
+
+// ---------------------------------
+
+void MST_prim(Graph *graph, int root_idx) {
+    // Initialization
+    int default_priority = INT_MAX - 1;
+    PriorityQueue *queue_ptr = build_min_heap(graph, &default_priority);
+    decrease_priority(queue_ptr, get_elem_idx_by_vertex_idx(queue_ptr, graph->num_vertices, root_idx), 0);
+
+    // Processing
+    int adj_elem_idx;
+    while (queue_ptr->size) {
+        PriorityQueueElem *queue_elem_ptr = extract_min(queue_ptr);
+        Vertex *adj_vertex_ptr = graph->adj_list[*(queue_elem_ptr->vertex_ptr->id)]->next;
+        while (adj_vertex_ptr != NULL) {
+            adj_elem_idx = get_elem_idx_by_vertex_idx(queue_ptr, graph->num_vertices, *(adj_vertex_ptr->id));
+            if (adj_elem_idx < queue_ptr->size && WEIGHT < queue_ptr->elem_ptr_arr[adj_elem_idx]->priority) {
+                queue_ptr->elem_ptr_arr[adj_elem_idx]->pred_vertex_ptr = queue_elem_ptr->vertex_ptr;
+                decrease_priority(queue_ptr, adj_elem_idx, WEIGHT);
+            }
+            adj_vertex_ptr = adj_vertex_ptr->next;
+        }
+    }
+
+    int total_weight = WEIGHT * (graph->num_vertices - 1);
+    printf("\nTotal weight of MST = %d\n", total_weight);
+
+    Vertex *cur_vertex_ptr, *adj_vertex_ptr;
+    int cur_elem_idx;
+    for (int i = 0; i < graph->num_vertices; i++) {
+        cur_elem_idx = get_elem_idx_by_vertex_idx(queue_ptr, graph->num_vertices, i);
+        cur_vertex_ptr = graph->adj_list[i];
+        adj_vertex_ptr = cur_vertex_ptr->next;
+        while (adj_vertex_ptr != NULL) {
+            adj_elem_idx = get_elem_idx_by_vertex_idx(queue_ptr, graph->num_vertices, *(adj_vertex_ptr->id));
+            int pred_vertex_id_1 = (i == root_idx) ? -1 : *(queue_ptr->elem_ptr_arr[cur_elem_idx]->pred_vertex_ptr->id);
+            int pred_vertex_id_2 = (*(adj_vertex_ptr->id) == root_idx) ? -1 : *(queue_ptr->elem_ptr_arr[adj_elem_idx]->pred_vertex_ptr->id);
+            if (pred_vertex_id_1 != *(adj_vertex_ptr->id) && pred_vertex_id_2 != i) {
+                delete_edge(graph, *(cur_vertex_ptr->x), *(cur_vertex_ptr->y), *(adj_vertex_ptr->x), *(adj_vertex_ptr->y));
+            }
+            adj_vertex_ptr = adj_vertex_ptr->next;
+        }
+    }
+
+    erase_binary_heap(queue_ptr, graph->num_vertices);
+}
+
+// ---------------------------------
+
 int print_graph(Graph *graph) {
     puts("");
 
@@ -928,6 +1053,8 @@ int dialog_enter_graph_from_file(Graph *graph) {
     return 1;  // Ok
 }
 
+// ---------------------------------
+
 int enter_graph_from_file(Graph *graph, char *fname) {
     char *adjusted_fname = (char *) malloc(sizeof(char) * (strlen(fname) + strlen(SRC_FOLDER_NAME) + 1));
 
@@ -980,3 +1107,5 @@ int enter_graph_from_file(Graph *graph, char *fname) {
     fclose(fp);
     return 0;  // Ok
 }
+
+// ---------------------------------
