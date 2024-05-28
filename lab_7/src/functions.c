@@ -12,7 +12,9 @@ const char *errmsgs[] = {"Ok",
                          "Remove all edges linked with this vertex to change it coordinate",
                          "This vertex already has this type",
                          "This vertex is not entrance",
-                         "No path from this entrance to any kind of exit"};
+                         "No path from this entrance to any kind of exit",
+                         "This vertex is not exit",
+                         "No path between the specified entrance and exit"};
 
 const char *msgs[] = {"0. Quit",
                       "1. Add vertex",
@@ -20,8 +22,9 @@ const char *msgs[] = {"0. Quit",
                       "3. Delete vertex",
                       "4. Delete edge",
                       "5. Change vertex information",
-                      "6. Check achievability from specified entrance to at least one exit",
-                      "7. Show graph"};
+                      "6. Check achievability from a specified entrance to at least one exit",
+                      "7. Find the shortest path between an entrance and an exit specified",
+                      "8. Show graph"};
 
 const int NMsgs = sizeof(msgs) / sizeof(msgs[0]);
 
@@ -32,6 +35,7 @@ int (*dialog_options[])(Graph *graph) = {NULL,
                                          dialog_delete_edge,
                                          dialog_change_vertex_information,
                                          dialog_check_achievability_exits,
+                                         dialog_dijkstra,
                                          print_graph};
 
 // ---------------------------------
@@ -157,7 +161,7 @@ Vertex *create_vertex(Graph *graph, int x, int y, int type) {
 int are_vertices_neighbors(Graph *graph, int first_vertex_idx, int second_vertex_idx) {
     Vertex *vertex1 = graph->adj_list[first_vertex_idx];
     Vertex *vertex2 = graph->adj_list[second_vertex_idx];
-    if (abs(*(vertex1->x) - *(vertex2->x)) == 1 && *(vertex1->y) == *(vertex2->y) || abs(*(vertex1->y) - *(vertex2->y)) == 1 && *(vertex1->x) == *(vertex2->x)) {
+    if (abs(*(vertex1->x) - *(vertex2->x)) == WEIGHT && *(vertex1->y) == *(vertex2->y) || abs(*(vertex1->y) - *(vertex2->y)) == WEIGHT && *(vertex1->x) == *(vertex2->x)) {
         return 1;  // Neighbors
     }
     return 0; 
@@ -576,6 +580,251 @@ void DFS_print_path(Graph *graph, int vertex_idx, int pred_idx_arr[], int flag_f
             printf("{№%d, (%d, %d), %s} -> ", id, x, y, vertex_types[type]);
         }
     }
+}
+
+// ---------------------------------
+
+// time: O(nlog(n))
+PriorityQueue *build_min_heap(Graph *graph, int *default_priority_ptr) {
+    // Initialization of a queue with priorities
+    PriorityQueue *queue_ptr = (PriorityQueue *) malloc(sizeof(PriorityQueue));
+    queue_ptr->elem_ptr_arr = (PriorityQueueElem **) malloc(sizeof(PriorityQueueElem *) * graph->num_vertices);
+
+    queue_ptr->size = graph->num_vertices;
+    for (int i = 0; i < graph->num_vertices; i++) {
+        PriorityQueueElem *queue_elem_ptr = (PriorityQueueElem *) malloc(sizeof(PriorityQueueElem));
+        queue_elem_ptr->vertex_ptr = graph->adj_list[i];
+        queue_elem_ptr->pred_vertex_ptr = NULL;
+        if (default_priority_ptr != NULL) {
+            queue_elem_ptr->priority = *default_priority_ptr;   
+        }
+
+        queue_ptr->elem_ptr_arr[i] = queue_elem_ptr;
+    }
+
+    int heap_size = queue_ptr->size;
+    int idx = (heap_size - 1) / 2;
+    while (idx >= 0) {
+        min_heapify(queue_ptr, idx);
+        idx--;
+    }
+
+    return queue_ptr;
+}
+
+void erase_binary_heap(PriorityQueue *queue_ptr, int queue_length) {
+    for (int i = 0; i < queue_length; i++) {
+        free(queue_ptr->elem_ptr_arr[i]);
+    }
+
+    free(queue_ptr->elem_ptr_arr);
+    free(queue_ptr);
+}
+
+// time: O(log(n))
+void min_heapify(PriorityQueue *queue_ptr, int idx) {
+    int left_idx = 2*idx + 1;
+    int right_idx = 2*idx + 2;
+
+    if (left_idx < queue_ptr->size) {
+        int smallest_idx;
+
+        int cur_elem_priority = queue_ptr->elem_ptr_arr[idx]->priority;
+        int left_elem_priority = queue_ptr->elem_ptr_arr[left_idx]->priority;
+
+        if (right_idx < queue_ptr->size) {
+            int right_elem_priority = queue_ptr->elem_ptr_arr[right_idx]->priority;
+
+            if (cur_elem_priority <= left_elem_priority && cur_elem_priority <= right_elem_priority) {
+                smallest_idx = idx;
+            } else if (left_elem_priority <= cur_elem_priority && left_elem_priority <= right_elem_priority) {
+                smallest_idx = left_idx;
+            } else {
+                smallest_idx = right_idx;
+            }
+        } else {
+            if (cur_elem_priority <= left_elem_priority) {
+                smallest_idx = idx;
+            } else {
+                smallest_idx = left_idx;
+            }
+        }
+
+        if (smallest_idx != idx) {
+            PriorityQueueElem *cur_elem_ptr = queue_ptr->elem_ptr_arr[idx];
+            queue_ptr->elem_ptr_arr[idx] = queue_ptr->elem_ptr_arr[smallest_idx];
+            queue_ptr->elem_ptr_arr[smallest_idx] = cur_elem_ptr;
+            min_heapify(queue_ptr, smallest_idx);
+        }
+    }
+}
+
+// time: O(log(n))
+PriorityQueueElem *extract_min(PriorityQueue *queue_ptr) {
+    if (queue_ptr->size == 0) {
+        return NULL;  // Queue is empty
+    }
+
+    PriorityQueueElem *min_elem_ptr = queue_ptr->elem_ptr_arr[0];
+    queue_ptr->elem_ptr_arr[0] = queue_ptr->elem_ptr_arr[queue_ptr->size - 1];
+    queue_ptr->elem_ptr_arr[queue_ptr->size - 1] = min_elem_ptr; // To avoid losing the pointer and correctly free memory later
+    queue_ptr->size -= 1;
+
+    min_heapify(queue_ptr, 0);
+
+    return min_elem_ptr;
+}
+
+int decrease_priority(PriorityQueue *queue_ptr, int idx, int new_priority) {
+    if (new_priority >= queue_ptr->elem_ptr_arr[idx]->priority) {
+        return 1;  // Request denied
+    }
+
+    queue_ptr->elem_ptr_arr[idx]->priority = new_priority;
+
+    PriorityQueueElem *cur_queue_elem_ptr;
+    while (idx > 0 && queue_ptr->elem_ptr_arr[(idx - 1) / 2]->priority > queue_ptr->elem_ptr_arr[idx]->priority) {
+        cur_queue_elem_ptr = queue_ptr->elem_ptr_arr[idx];
+        queue_ptr->elem_ptr_arr[idx] = queue_ptr->elem_ptr_arr[(idx - 1) / 2];
+        queue_ptr->elem_ptr_arr[(idx - 1) / 2] = cur_queue_elem_ptr;
+
+        idx = (idx - 1) / 2;
+    }
+
+    return 0;  // Ok
+}
+
+int get_elem_idx_by_vertex_idx(PriorityQueue *queue_ptr, int queue_length, int vertex_idx) {
+    for (int i = 0; i < queue_length; i++) {
+        if (*(queue_ptr->elem_ptr_arr[i]->vertex_ptr->id) == vertex_idx) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+
+
+// ---------------------------------
+
+int dialog_dijkstra(Graph *graph) {
+    int x1, y1;
+    int x2, y2;
+
+    const char *msgs[4] = {"Enter X coordinate of the entrance: -->",
+                           "Enter Y coordinate of the entrance: -->",
+                           "Enter X coordinate of the exit: -->",
+                           "Enter Y coordinate of the exit: -->"};
+    
+    int *coordinate_ptrs_arr[4] = {&x1, &y1, &x2, &y2};
+
+    for (int i = 0; i < 4; i++) {
+        puts(msgs[i]);
+        if (get_int(coordinate_ptrs_arr[i], 0) == 0) {
+            return 0;  // EOF -> игнорируем весь остальной ввод
+        }
+    }
+
+    int find_shortest_path_between_entrance_exit_result = find_shortest_path_between_entrance_exit(graph, x1, y1, x2, y2);
+    printf("\nResult of finding the shortest path between the specified entrance (%d, %d) and exit (%d, %d): %s\n", x1, y1, x2, y2, errmsgs[find_shortest_path_between_entrance_exit_result]);
+    return 1;
+}
+
+int find_shortest_path_between_entrance_exit(Graph *graph, int x1, int y1, int x2, int y2) {
+    int entrance_idx = search_vertex(graph, x1, y1);
+    int exit_idx = search_vertex(graph, x2, y2);
+    if (entrance_idx == -1 || exit_idx == -1) {
+        return 2;  // Graph doesn't have such vertex(vertices)
+    }
+
+    if (*(graph->adj_list[entrance_idx]->type) != 1) {
+        return 9;  // This vertex is not entrance
+    }
+
+    if (*(graph->adj_list[exit_idx]->type) != 2) {
+        return 11;  // This vertex is not exit
+    }
+
+    int dijkstra_result = dijkstra(graph, entrance_idx, exit_idx);
+    return dijkstra_result;
+}
+
+void print_path_dijkstra(Graph *graph, PriorityQueue *queue_ptr, int vertex_idx, int flag_first_call) {
+    Vertex *cur_vertex_ptr = graph->adj_list[vertex_idx];
+    int queue_elem_idx = get_elem_idx_by_vertex_idx(queue_ptr, graph->num_vertices, *(graph->adj_list[vertex_idx]->id));
+
+    if (flag_first_call) {
+        printf("The length of this shortest path = %d\n", queue_ptr->elem_ptr_arr[queue_elem_idx]->priority);
+    }
+
+    if (queue_ptr->elem_ptr_arr[queue_elem_idx]->pred_vertex_ptr == NULL) {
+        printf("{№%d (%d, %d), %s} -> ", *(cur_vertex_ptr->id), *(cur_vertex_ptr->x), *(cur_vertex_ptr->y), vertex_types[*(cur_vertex_ptr->type)]);
+    } else {
+        print_path_dijkstra(graph, queue_ptr, *(queue_ptr->elem_ptr_arr[queue_elem_idx]->pred_vertex_ptr->id), 0);
+        printf("{№%d (%d, %d), %s}", *(cur_vertex_ptr->id), *(cur_vertex_ptr->x), *(cur_vertex_ptr->y), vertex_types[*(cur_vertex_ptr->type)]);
+        if (!flag_first_call) {
+            printf(" -> ");
+        }
+    }
+}
+
+int dijkstra(Graph *graph, int origin_vertex_idx, int exit_vertex_idx) {
+    // Initialization
+    int default_priority = INT_MAX - 1;
+    PriorityQueue *queue_ptr = build_min_heap(graph, &default_priority);
+    
+    decrease_priority(queue_ptr, get_elem_idx_by_vertex_idx(queue_ptr, graph->num_vertices, origin_vertex_idx), 0);
+
+    for (int i = 0; i < queue_ptr->size; i++)
+    {
+        printf("(%d, %d)", *(queue_ptr->elem_ptr_arr[i]->vertex_ptr->id), queue_ptr->elem_ptr_arr[i]->priority);
+    }
+
+    puts("перед обработкой");
+    
+    // Processing
+    int adj_elem_idx;
+    while (queue_ptr->size)
+    {
+        PriorityQueueElem *queue_elem_ptr = extract_min(queue_ptr);
+        for (int i = 0; i < queue_ptr->size; i++)
+        {
+            printf("(%d, %d)", *(queue_ptr->elem_ptr_arr[i]->vertex_ptr->id), queue_ptr->elem_ptr_arr[i]->priority);
+        }
+        puts("1");
+        Vertex *adj_vertex_ptr = graph->adj_list[*(queue_elem_ptr->vertex_ptr->id)]->next;
+        puts("2");
+        
+        while (adj_vertex_ptr != NULL) {
+            adj_elem_idx = get_elem_idx_by_vertex_idx(queue_ptr, graph->num_vertices, *(adj_vertex_ptr->id));
+            printf("adj v idx = %d, adj elem idx = %d\n", *(adj_vertex_ptr->id),adj_elem_idx);
+            puts("3");
+            if (queue_ptr->elem_ptr_arr[adj_elem_idx]->priority > queue_elem_ptr->priority + WEIGHT) {
+                puts("4");
+                decrease_priority(queue_ptr, adj_elem_idx, queue_elem_ptr->priority + WEIGHT);
+                adj_elem_idx = get_elem_idx_by_vertex_idx(queue_ptr, graph->num_vertices, *(adj_vertex_ptr->id));
+                puts("5");
+                queue_ptr->elem_ptr_arr[adj_elem_idx]->pred_vertex_ptr = queue_elem_ptr->vertex_ptr;
+                printf("%d - предок для %d\n", *(queue_elem_ptr->vertex_ptr->id), *(queue_ptr->elem_ptr_arr[adj_elem_idx]->vertex_ptr->id));
+                puts("6");
+            }
+            adj_vertex_ptr = adj_vertex_ptr->next;
+            puts("7");
+        }
+        puts("8");
+    }
+    puts("9");
+    // Printing the shortest path
+    int exit_queue_elem_idx = get_elem_idx_by_vertex_idx(queue_ptr, graph->num_vertices, *(graph->adj_list[exit_vertex_idx]->id));
+    if (queue_ptr->elem_ptr_arr[exit_queue_elem_idx]->pred_vertex_ptr == NULL) {
+        return 12;  // No path between the specified entrance and exit
+    }
+
+    print_path_dijkstra(graph, queue_ptr, exit_vertex_idx, 1);
+
+    erase_binary_heap(queue_ptr, graph->num_vertices);
+
+    return 0;  // Ok
 }
 
 // ---------------------------------

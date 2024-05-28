@@ -6,6 +6,8 @@
 #include <math.h>
 #include <limits.h>
 
+#define WEIGHT (1)
+
 typedef struct Vertex {
     int *id;
     int *x;
@@ -18,6 +20,17 @@ typedef struct Graph {
     int num_vertices;
     Vertex **adj_list;
 } Graph;
+
+typedef struct PriorityQueueElem {
+    Vertex *vertex_ptr;
+    Vertex *pred_vertex_ptr;
+    int priority;
+} PriorityQueueElem;
+
+typedef struct PriorityQueue {
+    int size;
+    PriorityQueueElem **elem_ptr_arr;
+} PriorityQueue;
 
 /*
     Описание:
@@ -122,6 +135,46 @@ void DFS_print_path(Graph *graph, int vertex_idx, int pred_idx_arr[], int flag_f
 /*
 */
 int check_achievability_exits(Graph *graph, int x, int y);
+
+/*
+*/
+PriorityQueue *build_min_heap(Graph *graph, int *default_priority_ptr);
+
+/*
+*/
+void erase_binary_heap(PriorityQueue *queue_ptr, int queue_length);
+
+/*
+*/
+void min_heapify(PriorityQueue *queue_ptr, int idx);
+
+/*
+*/
+PriorityQueueElem *extract_min(PriorityQueue *queue_ptr);
+
+/*
+*/
+int decrease_priority(PriorityQueue *queue_ptr, int idx, int new_priority);
+
+/*
+*/
+int get_elem_idx_by_vertex_idx(PriorityQueue *queue_ptr, int queue_length, int vertex_idx);
+
+/*
+*/
+int dialog_dijkstra(Graph *graph);
+
+/*
+*/
+int find_shortest_path_between_entrance_exit(Graph *graph, int x1, int y1, int x2, int y2);
+
+/*
+*/
+void print_path_dijkstra(Graph *graph, PriorityQueue *queue_ptr, int vertex_idx, int flag_first_call);
+
+/*
+*/
+int dijkstra(Graph *graph, int origin_vertex_idx, int exit_vertex_idx);
 
 /*
 */
